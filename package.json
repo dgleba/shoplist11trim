@@ -1,0 +1,13 @@
+{
+  "name": "shopliststep11trim-4",
+  "version": "1.0.0",
+  "description": "This is a static template with no bundling",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ives van Hoorne",
+  "license": "MIT",
+  "homepage": "https://github.com/codesandbox-app/static-template#readme",
+  "keywords": []
+}
