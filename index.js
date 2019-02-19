@@ -1,48 +1,3 @@
-// this will be the PouchDB database
-var db = new PouchDB("shopping");
-
-// template shopping list object
-const sampleShoppingList = {
-  _id: "",
-  type: "list",
-  version: 1,
-  title: "",
-  checked: false,
-  place: {
-    title: "",
-    license: null,
-    lat: null,
-    lon: null,
-    address: {}
-  },
-  createdAt: "",
-  updatedAt: ""
-};
-
-/**
- * Sort comparison function to sort an object by "createdAt" field
- *
- * @param  {String} a
- * @param  {String} b
- * @returns {Number}
- */
-const newestFirst = (a, b) => {
-  if (a.createdAt > b.createdAt) return -1;
-  if (a.createdAt < b.createdAt) return 1;
-  return 0;
-};
-
-// Vue Material plugin
-Vue.use(VueMaterial);
-
-// Vue Material theme
-Vue.material.registerTheme("default", {
-  primary: "blue",
-  accent: "white",
-  warn: "red",
-  background: "grey"
-});
-
 // this is the Vue.js app. It contains
 // el - the HTML element where the app is rendered
 // data - the data the app needs to be rendered
@@ -163,80 +118,6 @@ var app = new Vue({
         this.startSync();
       });
     },
-    /**
-     * Called when the sync process is to start. Initiates a PouchDB to
-     * to Cloudant two-way sync and listens to the changes coming in
-     * from the Cloudant feed. We need to monitor the incoming change
-     * so that the Vue.js model is kept in sync.
-     */
-    startSync: function() {
-      this.syncStatus = "notsyncing";
-      if (this.sync) {
-        this.sync.cancel();
-        this.sync = null;
-      }
-      if (!this.syncURL) {
-        return;
-      }
-      this.syncStatus = "syncing";
-      this.sync = db
-        .sync(this.syncURL, {
-          live: true,
-          retry: false
-        })
-        .on("change", info => {
-          // handle change
-          // if this is an incoming change
-          if (info.direction == "pull" && info.change && info.change.docs) {
-            // loop through all the changes
-            for (var i in info.change.docs) {
-              var change = info.change.docs[i];
-              var arr = null;
-
-              // see if it's an incoming item or list or something else
-              if (change._id.match(/^item/)) {
-                arr = this.shoppingListItems;
-              } else if (change._id.match(/^list/)) {
-                arr = this.shoppingLists;
-              } else {
-                continue;
-              }
-
-              // locate the doc in our existing arrays
-              var match = this.findDoc(arr, change._id);
-
-              // if we have it already
-              if (match.doc) {
-                // and it's a deletion
-                if (change._deleted == true) {
-                  // remove it
-                  arr.splice(match.i, 1);
-                } else {
-                  // modify it
-                  delete change._revisions;
-                  Vue.set(arr, match.i, change);
-                }
-              } else {
-                // add it
-                if (!change._deleted) {
-                  arr.unshift(change);
-                }
-              }
-            }
-          }
-        })
-        .on("error", e => {
-          this.syncStatus = "syncerror";
-        })
-        .on("denied", e => {
-          this.syncStatus = "syncerror";
-        })
-        .on("paused", e => {
-          if (e) {
-            this.syncStatus = "syncerror";
-          }
-        });
-    },
 
     /**
      * Given a list of docs and an id, find the doc in the list that has
@@ -333,41 +214,11 @@ var app = new Vue({
       });
     },
 
-    /**
-     * Called when the Edit button is pressed next to a shopping list.
-     * We locate the list document by id and change mode to "addlist",
-     * pre-filling the form with that document's details.
-     * @param {String} id
-     * @param {String} title
-     */
-    onClickEdit: function(id, title) {
-      this.singleList = this.findDoc(this.shoppingLists, id).doc;
-      this.pagetitle = "Edit - " + title;
-      this.places = [];
-      this.selectedPlace = null;
-      this.mode = "addlist";
-    },
+    onClickEdit: fonClickEdit,
 
-    /**
-     * Called when the delete button is pressed next to a shopping list.
-     * The shopping list document is located, removed from PouchDB and
-     * removed from Vue's shoppingLists array.
-     * @param {String} id
-     */
-    onClickDelete: function(id) {
-      var match = this.findDoc(this.shoppingLists, id);
-      db.remove(match.doc).then(() => {
-        this.shoppingLists.splice(match.i, 1);
-      });
-    },
+    onClickDelete: fonClickDelete,
 
-    /**
-     * Called when the Back button is pressed. Returns to the
-     * home screen with a lit of shopping lists.
-     */
-    onBack: function() {
-      this.mode = "showlist";
-      this.pagetitle = "Shopping Lists";
-    }
+    onBack: fonback,
+    startSync: fstartsync
   }
 });
