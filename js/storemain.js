@@ -1,3 +1,94 @@
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+const fsaveLocalDoc = function(doc) {
+  return db
+    .get(doc._id)
+    .then(data => {
+      doc._rev = data._rev;
+      return db.put(doc);
+    })
+    .catch(e => {
+      return db.put(doc);
+    });
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+/**
+ * Given a list of docs and an id, find the doc in the list that has
+ * an '_id' (key) that matches the incoming id. Updates its "updatedAt"
+ * attribute and write it back to PouchDB.
+ *   i - the index where the item was found
+ *   doc - the matching document
+ * @param {Array} docs
+ * @param {String} id
+
+ */
+const ffindUpdateDoc = function(docs, id) {
+  // locate the doc
+  var doc = this.findDoc(docs, id).doc;
+
+  // if it exits
+  if (doc) {
+    // modift the updated date
+    doc.updatedAt = new Date().toISOString();
+
+    // write it on the next tick (to give Vue.js chance to sync state)
+    this.$nextTick(() => {
+      // write to database
+      db.put(doc).then(data => {
+        // retain the revision token
+        doc._rev = data.rev;
+      });
+    });
+  }
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+/**
+ * Given a list of docs and an id, find the doc in the list that has
+ * an '_id' (key) that matches the incoming id. Returns an object
+ * with the
+ *   i - the index where the item was found
+ *   doc - the matching document
+ * @param {Array} docs
+ * @param {String} id
+ * @param {String} key
+ * @returns {Object}
+ */
+const ffindDoc = function(docs, id, key) {
+  if (!key) {
+    key = "_id";
+  }
+  var doc = null;
+  for (var i in docs) {
+    if (docs[i][key] == id) {
+      doc = docs[i];
+      break;
+    }
+  }
+  return { i: i, doc: doc };
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+/**
+ * Called when save button on the settings panel is clicked. The
+ * Cloudant sync URL is saved in PouchDB and the sync process starts.
+ */
+const fonClickStartSync = function() {
+  var obj = {
+    _id: "_local/user",
+    syncURL: this.syncURL
+  };
+  this.saveLocalDoc(obj).then(() => {
+    this.startSync();
+  });
+};
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 /**
  * Called when the sync process is to start. Initiates a PouchDB to
  * to Cloudant two-way sync and listens to the changes coming in
@@ -72,3 +163,5 @@ const fstartsync = function() {
       }
     });
 };
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
